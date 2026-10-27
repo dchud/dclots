@@ -269,10 +269,11 @@ class Parser:
     ``"square_only"`` returns the square and suffix with no lot.
 
     ``extra_zeros`` sets how a number written with more than four digits
-    is read. ``"invalid"`` rejects the value. ``"trim"`` drops the
-    leading zeros of a run of digits when exactly four digits remain and
-    no letter or digit comes before the run, so ``00278    0032`` reads
-    as square 0278 and ``PAR 00087 0075`` as parcel 0087.
+    is read. ``"invalid"`` rejects the value. ``"trim"`` reads a value
+    that doesn't parse again, with the leading zeros of each run of
+    digits dropped where exactly four digits remain and no letter or
+    digit comes before the run, so ``00278    0032`` reads as square
+    0278 and ``PAR 00087 0075`` as parcel 0087.
 
     With ``unreadable_lot="square_only"``, a value that another option
     rejects for its lot, such as ``0368    0028-1`` under
@@ -304,14 +305,22 @@ class Parser:
         # before it runs.
         if not "".join(text.split()).isascii():
             return None
-        text = text.upper()
+        readings = [text.upper()]
         if self.extra_zeros == "trim":
-            text = _EXTRA_ZEROS.sub("", text)
-        return (
-            self._parse_square(text)
-            or self._parse_prefixed(text)
-            or self._parse_square_only(text)
-        )
+            # A second reading, so a value that parses as written keeps
+            # its result: PAR 00000075 stays parcel 0000.
+            readings.append(_EXTRA_ZEROS.sub("", readings[0]))
+        for reading in readings:
+            result = self._parse_square(reading) or self._parse_prefixed(
+                reading
+            )
+            if result is not None:
+                return result
+        for reading in readings:
+            result = self._parse_square_only(reading)
+            if result is not None:
+                return result
+        return None
 
     def _parse_square(self, text: str) -> SSL | None:
         match = _SQUARE_SSL.fullmatch(text)

@@ -223,10 +223,12 @@ None
 How a number written with more than four digits is read.
 
 - `"invalid"` (default): the value does not parse.
-- `"trim"`: drop the leading zeros of any run of digits in the value when
-  exactly four digits remain and no letter or digit comes before the run. This
-  covers squares, lots, and parcel and appropriation numbers. A run that can't
-  be cut to four digits that way, such as `012000001`, is left as it is.
+- `"trim"`: a value that doesn't parse is read again, with the leading zeros
+  of each run of digits dropped where exactly four digits remain and no letter
+  or digit comes before the run. This covers squares, lots, and parcel and
+  appropriation numbers. A value that parses as written keeps its result, so
+  `PAR 00000075` stays parcel `0000`. A run that can't be cut to four digits
+  that way, such as `012000001`, is left as it is.
 
 ```pycon
 >>> trim = dclots.Parser(extra_zeros="trim")
