@@ -523,3 +523,8 @@ def test_module_header_carries_license_and_link() -> None:
     assert " ".join(license_words[2:]) in " ".join(header_words)
     assert "SPDX-License-Identifier: MIT" in header
     assert "https://github.com/dchud/dclots" in header
+
+
+def test_package_is_marked_typed() -> None:
+    # Without py.typed, mypy treats an installed dclots as untyped.
+    assert Path(dclots.__file__).with_name("py.typed").is_file()

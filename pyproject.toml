@@ -18,14 +18,8 @@ classifiers = [
 ]
 
 [build-system]
-requires = ["hatchling>=1.27"]
-build-backend = "hatchling.build"
-
-# The package is one module so it can also be copied into a project as
-# a single file.
-[tool.hatch.build.targets.wheel]
-only-include = ["src/dclots.py"]
-sources = ["src"]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
@@ -69,5 +63,6 @@ filterwarnings = [
     "ignore:The 'future.infer_string' option is deprecated",
 ]
 
-[tool.hatch.build.targets.sdist]
-include = ["src/dclots.py", "tests", "README.md", "LICENSE"]
+[tool.uv.build-backend]
+# The tests read README.md and LICENSE, which the sdist carries anyway.
+source-include = ["tests/**"]

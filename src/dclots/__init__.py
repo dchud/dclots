@@ -41,8 +41,9 @@ Every function takes any value, so each one works as a dataframe UDF.
 The accessors return None for a value that doesn't parse, and
 ``is_valid`` returns False.
 
-This module has no dependencies outside the standard library and can be
-copied into a project as a single file.
+This module has no dependencies outside the standard library. To use it
+without installing the package, copy this file into a project as
+``dclots.py``.
 """
 
 from __future__ import annotations

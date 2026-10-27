@@ -5,14 +5,15 @@ Instructions for agents working in this repository.
 ## Project
 
 `dclots` parses and labels District of Columbia SSL (square, suffix, lot)
-identifiers. It is one module, `src/dclots.py`, with no dependencies outside
-the standard library, supporting Python 3.11 through 3.15. Every public
+identifiers. It is one module, `src/dclots/__init__.py`, with no dependencies
+outside the standard library, supporting Python 3.11 through 3.15. Every public
 function takes one value and returns one value, or `None` when the value
 doesn't parse, so each works as a scalar UDF in pandas, polars, DuckDB, ibis
 and PySpark.
 
-Users install it from git or copy `src/dclots.py` into their project. Keep it
-a single file with no runtime dependencies.
+Users install it from git, or copy `src/dclots/__init__.py` into their
+project as `dclots.py`. Keep it a single code file with no runtime
+dependencies. `src/dclots/py.typed` marks the installed package as typed.
 
 `README.md` is the user documentation: the SSL format, every function, the
 lot-type ranges and their exceptions, repairs, options, and dataframe
@@ -22,7 +23,8 @@ examples.
 
 | Path | Contents |
 |---|---|
-| `src/dclots.py` | The library: patterns, the `SSL` record, `Parser`, module-level functions |
+| `src/dclots/__init__.py` | The library: patterns, the `SSL` record, `Parser`, module-level functions |
+| `src/dclots/py.typed` | Marks the installed package as typed for mypy and other checkers |
 | `tests/test_dclots.py` | Behavior tests, using SSL values from DC's VPM layers |
 | `tests/test_readme.py` | Runs every README example and checks its printed output |
 | `README.md` | User documentation |

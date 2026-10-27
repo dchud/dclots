@@ -15,8 +15,11 @@ This repository was developed with agentic coding tools.
 uv add git+https://github.com/dchud/dclots
 ```
 
-Or copy `src/dclots.py` into your project. Its header carries the MIT license
-and a link back to this repository.
+Or copy `src/dclots/__init__.py` into your project as `dclots.py`. Its header
+carries the MIT license and a link back to this repository.
+
+The installed package includes a `py.typed` marker, so type checkers such as
+mypy read its annotations.
 
 ## SSL values
 
