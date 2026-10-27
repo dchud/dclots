@@ -26,6 +26,7 @@ examples.
 | `src/dclots/__init__.py` | The library: patterns, the `SSL` record, `Parser`, module-level functions |
 | `src/dclots/py.typed` | Marks the installed package as typed for mypy and other checkers |
 | `tests/test_dclots.py` | Behavior tests, using SSL values from DC's VPM layers |
+| `tests/test_properties.py` | Hypothesis property tests: rules that hold for every input |
 | `tests/test_readme.py` | Runs every README example and checks its printed output |
 | `README.md` | User documentation |
 | `scripts/check.sh` | Pre-push check; runs what CI runs |
@@ -70,6 +71,10 @@ README example whose library isn't installed. CI sets Java 21 and
 
 - Take test values from DC's data where possible, and name the source layer
   in a comment. Mark made-up values "constructed".
+- `tests/test_properties.py` states rules that hold for every input: no
+  function raises, generated SSLs parse back to their parts, repairs and
+  `normalize` don't change a result, and the options relate as documented. A
+  new option or repair gets a property there as well as example tests.
 - Every README example is a test. `pycon` blocks run as doctests in one
   shared namespace. A `python` block followed by a `text` block must print
   exactly that text; produce the text by running the code.

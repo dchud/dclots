@@ -25,6 +25,7 @@ EXCLUDED_DIRS = {
     ".beads",
     ".claude",
     ".git",
+    ".hypothesis",
     ".mypy_cache",
     ".playwright-mcp",
     ".pytest_cache",
