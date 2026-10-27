@@ -1,0 +1,73 @@
+[project]
+name = "dclots"
+version = "0.1.0"
+description = "Parse and label District of Columbia SSL (square, suffix, lot) identifiers"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Daniel Chudnov" }]
+requires-python = ">=3.11"
+dependencies = []
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+# The package is one module so it can also be copied into a project as
+# a single file.
+[tool.hatch.build.targets.wheel]
+only-include = ["src/dclots.py"]
+sources = ["src"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18",
+    "pytest>=9.0",
+    "ruff>=0.15",
+    "zizmor>=1.30",
+    # The README shows the module as a UDF in each of these, and the
+    # README examples run as tests.
+    "duckdb>=1.4",
+    "ibis-framework[duckdb]>=11.0",
+    "pandas>=2.3",
+    "polars>=1.34",
+    "pyspark>=4.0",
+]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests", "scripts"]
+
+[[tool.mypy.overrides]]
+module = ["pyspark.*", "ibis.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# tmp/ holds scratch and downloaded data; collecting it turns a
+# throwaway file into a suite failure.
+norecursedirs = ["tmp", ".venv"]
+filterwarnings = [
+    # PySpark warns on import when pandas 3 is installed; the README's
+    # PySpark example does not use pandas.
+    "ignore:PySpark does not yet fully support pandas:FutureWarning",
+    # Raised inside ibis's pandas conversion, not by these tests.
+    "ignore:The 'future.infer_string' option is deprecated",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/dclots.py", "tests", "README.md", "LICENSE"]

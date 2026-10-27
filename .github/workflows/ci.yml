@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Every job here only reads the repository and runs checks; none of them
+# pushes, comments, or publishes.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4  # v10.1.0
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Type check
+        run: uv run mypy
+
+      - name: Check for process labels in persistent artifacts
+        run: uv run python scripts/lint_process_labels.py
+
+      - name: Lint the workflows
+        run: uv run zizmor .github/workflows/
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+    env:
+      # Fail rather than skip the PySpark README example if Java is
+      # missing or unsupported, so CI always runs it.
+      DCLOTS_REQUIRE_SPARK: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4  # v10.1.0
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python }}
+
+      # Spark 4 runs on Java 17 or 21. The runner image ships both.
+      - name: Use Java 21 for PySpark
+        run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-$JAVA_HOME}" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Run tests
+        run: uv run pytest
