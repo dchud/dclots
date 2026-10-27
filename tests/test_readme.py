@@ -7,6 +7,7 @@ the block prints must match that text.
 
 import contextlib
 import doctest
+import importlib
 import io
 import os
 import re
@@ -22,6 +23,10 @@ IMPORT = re.compile(r"^(?:from|import) (\w+)", re.MULTILINE)
 
 # Spark 4 runs on these Java releases; newer ones fail at startup.
 SPARK_JAVA = {17, 21}
+
+# CI sets this so a missing library or Java fails the run instead of
+# skipping a README example.
+REQUIRE_ALL = bool(os.environ.get("DCLOTS_REQUIRE_ALL_EXAMPLES"))
 
 
 def blocks() -> list[tuple[str, str, int]]:
@@ -77,11 +82,16 @@ def require_spark_java() -> None:
     if major in SPARK_JAVA:
         return
     reason = f"PySpark needs Java 17 or 21; found {major or 'no Java'}"
-    # CI sets this so a missing JVM fails the run instead of skipping
-    # the only check of the PySpark example.
-    if os.environ.get("DCLOTS_REQUIRE_SPARK"):
+    if REQUIRE_ALL:
         pytest.fail(reason)
     pytest.skip(reason)
+
+
+def require_module(name: str) -> None:
+    if REQUIRE_ALL:
+        importlib.import_module(name)
+    else:
+        pytest.importorskip(name)
 
 
 def test_pycon_examples() -> None:
@@ -109,7 +119,7 @@ def test_pycon_examples() -> None:
 )
 def test_python_example(body: str, expected: str | None) -> None:
     for module in sorted(set(IMPORT.findall(body)) - {"dclots"}):
-        pytest.importorskip(module)
+        require_module(module)
     if "pyspark" in body:
         require_spark_java()
     output = io.StringIO()

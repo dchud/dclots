@@ -6,6 +6,11 @@ cd "$(dirname "$0")/.."
 
 step() { printf '\n=== %s ===\n' "$1"; }
 
+# CI installs with --locked, which fails when uv.lock is out of date;
+# `uv run` alone would rewrite the lockfile instead.
+step "lockfile"
+uv sync --locked
+
 step "format"
 uv run ruff format --check .
 
