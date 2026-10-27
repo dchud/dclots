@@ -28,7 +28,7 @@ examples.
 | `README.md` | User documentation |
 | `scripts/check.sh` | Pre-push check; runs what CI runs |
 | `scripts/lint_process_labels.py` | Fails on ticket IDs, PR numbers and version-tagged claims |
-| `.github/workflows/ci.yml` | `lint`; `test` on Python 3.11–3.15; `test-results`, one result for the test matrix |
+| `.github/workflows/ci.yml` | `lint`; `test` on each supported Python version; `test-results`, one result for the test matrix |
 | `.beads/` | Issue tracker (`br`) |
 
 ## Commands
@@ -42,8 +42,9 @@ uv run pytest -q      # tests only
 Use `uv` for every Python invocation. Line length is 79.
 
 The PySpark README example needs Java 17 or 21. `check.sh` skips it when the
-Java found through `JAVA_HOME` or the path is another version. CI sets Java 21
-and `DCLOTS_REQUIRE_SPARK=1`, which turns that skip into a failure.
+Java found through `JAVA_HOME` or the path is another version, and skips any
+README example whose library isn't installed. CI sets Java 21 and
+`DCLOTS_REQUIRE_ALL_EXAMPLES=1`, which turns those skips into failures.
 
 ## How the library works
 
@@ -83,12 +84,13 @@ repository.
 |---|---|
 | 40 | Common Ownership Lots |
 | 52 | Condo Relate Table |
+| 44 | Condo Approval Lots |
 | 34 | Record Lots (Historical) |
 | 39, 38 | Tax Lots, Tax Lots (Historical) |
-| 33 | Parcel Lots |
-| 37 | Reservations |
+| 33, 32 | Parcel Lots, Parcel Lots (Historical) |
+| 37, 36 | Reservations, Reservations (Historical) |
+| 3, 2 | Air Rights Lots, Air Rights Lots (Historical) |
 | 5 | Appropriations |
-| 3 | Air Rights Lots |
 | 78 | Land Boundary Change |
 
 What the data shows:
@@ -96,6 +98,8 @@ What the data shows:
 - Parcel Lots and Reservations use `SQUARE` for the square(s) a parcel or
   reservation lies in, not for the SSL's first field.
 - DC's `LOT` column includes the of-lot marker, as in `0076-of2`.
+- The `LOT_TYPE` domain in a layer's metadata (`<layer>?f=json`) defines
+  codes 1 through 7; 7 is condo.
 - The SSL string and DC's `SQUARE`/`SUFFIX` columns sometimes disagree. The
   parser reads the string.
 

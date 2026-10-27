@@ -1,9 +1,11 @@
 """Tests for dclots.
 
-Unless a case is marked "constructed", the SSL values come from DC's
-Vector Property Map layers on Open Data DC, and the expected fields
-match the SQUARE, SUFFIX, LOT, PAR, RES and LOT_TYPE columns DC
-publishes alongside them. The comment above each group names the layer.
+A comment above each group of values says where they came from: a layer
+of DC's Vector Property Map data on Open Data DC, or "constructed" for a
+value made up for the test. Expected fields are read from the SSL
+string. DC's SQUARE, SUFFIX and LOT columns usually match it but not
+always: ``1264E      0003`` has an empty SUFFIX in Record Lots
+(Historical).
 """
 
 import math
@@ -90,6 +92,7 @@ def test_parse_prefixed_ssl(
         # Constructed.
         ("0120e   0001", "0120E   0001"),
         ("  0120    0001  ", "0120    0001"),
+        ("0120\u00a0\u00a0\u00a0\u00a00001", "0120    0001"),
         ("0120E0001", "0120E   0001"),
         ("01200001", "0120    0001"),
         ("120 0001", "0120    0001"),
@@ -165,6 +168,9 @@ INVALID = [
     "120 1",
     "0000    0001",
     "Square 120 Lot 1",
+    # Constructed: non-ASCII letters that upper() turns into ASCII ones.
+    "0120\u00df   0001",
+    "0667e\u017f\u017f 0802",
 ]
 
 ACCESSORS = [
@@ -190,14 +196,30 @@ def test_invalid_values_parse_to_none(value: object) -> None:
         assert accessor(value) is None, accessor.__name__
 
 
+# Constructed: Python's int() refuses digit strings over 4,300 digits.
+@pytest.mark.parametrize(
+    "value",
+    [
+        pytest.param("0120    0001-" + "1" * 5000, id="dash-5000-digits"),
+        pytest.param("0120    0001-of" + "1" * 5000, id="of-5000-digits"),
+    ],
+)
+def test_overlong_marker_number_parses_to_none(value: str) -> None:
+    assert dclots.parse(value) is None
+    assert dclots.is_valid(value) is False
+
+
 @pytest.mark.parametrize(
     ("value", "normalized"),
     [
+        # Constructed.
         ("0120    0001", "0120    0001"),
+        # Common Ownership Lots, Reservations, Appropriations.
         ("0667ESS 0802", "0667ESS 0802"),
         ("PAR 00870075", "PAR 00870075"),
         ("RES 015P0000", "RES 015P0000"),
         ("APPR00070000", "APPR00070000"),
+        # Record Lots (Historical) and Parcel Lots.
         ("1220    0076-of2", "1220    0076"),
         ("2079    0003-of", "2079    0003"),
         ("PAR 02410001-of1", "PAR 02410001"),
@@ -212,10 +234,12 @@ def test_normalize_drops_of_lot_marker_by_default(
 @pytest.mark.parametrize(
     ("value", "normalized"),
     [
+        # Record Lots (Historical) and Parcel Lots.
         ("0368    0028-1", "0368    0028-of1"),
         ("2894    0041-OF1", "2894    0041-of1"),
         ("2079    0003-of", "2079    0003-of"),
         ("PAR 02410001-of1", "PAR 02410001-of1"),
+        # Constructed.
         ("0120    0001", "0120    0001"),
     ],
 )
@@ -237,7 +261,8 @@ def test_normalize_keeps_of_lot_marker(value: str, normalized: str) -> None:
         ("0100    9999", "air_rights"),
         ("0100    0000", None),
         # Air Rights Lots (Historical), Tax Lots (Historical), Condo
-        # Relate Table, Common Ownership Lots, Appropriations.
+        # Relate Table, Common Ownership Lots, Appropriations, Record Lots
+        # (Historical).
         ("1045    7007", "air_rights"),
         ("0507    0811", "tax"),
         ("0036    2013", "condo"),
@@ -267,6 +292,7 @@ def test_lot_type_is_inferred_from_range(
     assert dclots.lot_type_name(lot_type_code) != inferred
 
 
+# The codes are the LOT_TYPE domain in DC's lot layers.
 @pytest.mark.parametrize(
     ("code", "name"),
     [
@@ -276,14 +302,16 @@ def test_lot_type_is_inferred_from_range(
         (4, "reservation"),
         (5, "appropriation"),
         (6, "parcel"),
+        (7, "condo"),
         ("1", "record"),
         (" 6 ", "parcel"),
         (3.0, "air_rights"),
         (0, None),
-        (7, None),
+        (8, None),
         (1.5, None),
         (True, None),
         ("x", None),
+        pytest.param("1" * 5000, None, id="5000-digits"),
         (None, None),
         (math.nan, None),
     ],
@@ -292,10 +320,22 @@ def test_lot_type_name(code: object, name: str | None) -> None:
     assert dclots.lot_type_name(code) == name
 
 
+def test_lot_type_name_reads_numpy_numbers() -> None:
+    np = pytest.importorskip("numpy")
+    assert dclots.lot_type_name(np.int64(3)) == "air_rights"
+    assert dclots.lot_type_name(np.float64(6.0)) == "parcel"
+    assert dclots.lot_type_name(np.float32(6.0)) == "parcel"
+    assert dclots.lot_type_name(np.float32(1.5)) is None
+    assert dclots.lot_type_name(np.True_) is None
+
+
 @pytest.mark.parametrize(
     ("value", "text"),
     [
+        # Constructed.
         ("0120E   0001", "Square 0120E Lot 0001"),
+        # Common Ownership Lots, Record Lots (Historical), Reservations,
+        # Appropriations.
         ("0254    7003", "Square 0254 Lot 7003"),
         ("1220    0076-of2", "Square 1220 Lot 0076 (of-lot 2)"),
         ("2079    0003-of", "Square 2079 Lot 0003 (of-lot)"),
@@ -311,9 +351,11 @@ def test_display(value: str, text: str) -> None:
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
+        # Constructed.
         ("0120E   0001", True),
-        ("1068SE  0041", True),
         ("0120    0001", False),
+        # Common Ownership Lots.
+        ("1068SE  0041", True),
         ("PAR 00870075", False),
         ("RES 015P0000", False),
     ],
@@ -323,6 +365,7 @@ def test_has_suffix(value: str, expected: bool) -> None:
 
 
 def test_accessors_match_parsed_fields() -> None:
+    # Constructed.
     value = "1220N   0076-of2"
     result = dclots.parse(value)
     assert result is not None
@@ -341,16 +384,19 @@ def test_accessors_match_parsed_fields() -> None:
 
 
 def test_number_accessor() -> None:
+    # Common Ownership Lots, and a constructed square SSL.
     assert dclots.number("PAR 00870075") == "0087"
     assert dclots.number("0120    0001") is None
 
 
 def test_module_functions_use_default_options() -> None:
+    # Record Lots (Historical).
     default = Parser()
     for value in ["0368    0028-1", "3561    ORIGINAL", "00278    0032"]:
         assert dclots.parse(value) == default.parse(value)
 
 
+# Record Lots (Historical).
 class TestDashMarkerOption:
     def test_invalid_rejects_bare_dash_number(self) -> None:
         parser = Parser(dash_marker="invalid")
@@ -366,6 +412,7 @@ class TestDashMarkerOption:
 class TestUnreadableLotOption:
     parser = Parser(unreadable_lot="square_only")
 
+    # Record Lots (Historical) and Common Ownership Lots.
     @pytest.mark.parametrize(
         ("value", "square", "suffix"),
         [
@@ -383,6 +430,7 @@ class TestUnreadableLotOption:
         assert self.parser.parse(value) == square_ssl(square, suffix, None)
 
     def test_square_only_result_has_no_lot_labels(self) -> None:
+        # Record Lots (Historical).
         value = "0604W   ORIGINAL"
         assert self.parser.is_valid(value) is True
         assert self.parser.lot_type(value) is None
@@ -392,8 +440,10 @@ class TestUnreadableLotOption:
     @pytest.mark.parametrize(
         "value",
         [
+            # Air Rights Lots and Record Lots (Historical).
             "0000    Unassessed",
             "0580NORTH OF 2ND, C, CANAL STS.",
+            # Constructed.
             "PT OF SQUARE",
             "0120",
             "12 MAIN ST",
@@ -403,8 +453,17 @@ class TestUnreadableLotOption:
         assert self.parser.parse(value) is None
 
     def test_square_only_leaves_readable_values_alone(self) -> None:
+        # Constructed.
         assert self.parser.parse("0120E   0001") == square_ssl(
             "0120", "E", "0001"
+        )
+
+    def test_square_only_reads_lots_other_options_reject(self) -> None:
+        # Record Lots (Historical), and a constructed five-digit lot.
+        parser = Parser(dash_marker="invalid", unreadable_lot="square_only")
+        assert parser.parse("0368    0028-1") == square_ssl("0368", None, None)
+        assert self.parser.parse("0120    00001") == square_ssl(
+            "0120", None, None
         )
 
 
@@ -418,6 +477,13 @@ class TestExtraZerosOption:
     def test_trim_reads_five_digit_lot(self) -> None:
         # Constructed.
         assert self.parser.normalize("0120    00001") == "0120    0001"
+
+    def test_trim_reads_square_before_suffix_and_prefixed_numbers(
+        self,
+    ) -> None:
+        # Constructed.
+        assert self.parser.normalize("00278E   0032") == "0278E   0032"
+        assert self.parser.normalize("PAR 00087 0075") == "PAR 00870075"
 
     def test_trim_does_not_split_unspaced_digits(self) -> None:
         # Constructed.

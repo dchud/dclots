@@ -36,9 +36,10 @@ DC's Appropriations layer.
 | `RES 015P0000` | reservation   | number `015P`, lot `0000`               |
 | `APPR00070000` | appropriation | number `0007`, lot `0000`               |
 
-Some lots in DC's historical layers carry an of-lot marker after the lot, as
-in `1220    0076-of2`. "Of-lot" is the DC Surveyor's term for the remaining
-part of an original lot. The parser reads the marker separately from the lot.
+Some lots in DC's data, most of them in the historical layers, carry an of-lot
+marker after the lot, as in `1220    0076-of2`. "Of-lot" is the DC Surveyor's
+term for the remaining part of an original lot. The parser reads the marker
+separately from the lot.
 
 ## Usage
 
@@ -117,9 +118,11 @@ codes to the same names `lot_type()` returns.
 | 4          | `reservation`     |
 | 5          | `appropriation`   |
 | 6          | `parcel`          |
+| 7          | `condo`           |
 
-`LOT_TYPE` has no code for condo lots. `lot_type_name()` accepts an integer,
-an integral float such as `6.0`, or a string of digits.
+None of the sampled records use code 7. `lot_type_name()` accepts an integer,
+an integral float such as `6.0`, or a string of digits, including numpy number
+types.
 
 ## Repairs and invalid values
 
@@ -169,8 +172,9 @@ always read as of-lot markers.
 - `"of_lot"` (default): `-N` is an of-lot marker, the same as `-ofN`.
 - `"invalid"`: a value ending in `-N` does not parse.
 
-In DC's Record Lots (Historical) layer, the `OF_LOT_SEQ` flag is set for 128
-of the 207 lots written with `-N`, and for 181 of the 200 written with `-ofN`.
+In DC's Record Lots (Historical) layer, the `OF_LOT_SEQ` flag is set for 119
+of the 196 lots written with `-N`, and for 180 of the 199 written with `-of`
+or `-ofN`.
 
 ```pycon
 >>> dclots.of_lot_number("0368    0028-1")
@@ -192,6 +196,10 @@ suffix, followed by a space and text that is not a lot.
   `lot_type()` and `normalize()` return `None` for it, and `display()` shows
   the square.
 
+`"square_only"` also applies to a value that another option rejects for its
+lot, such as `0368    0028-1` under `dash_marker="invalid"` or
+`0120    00001` under the default `extra_zeros`.
+
 ```pycon
 >>> partial = dclots.Parser(unreadable_lot="square_only")
 >>> partial.parse("0604W   ORIGINAL")
@@ -202,21 +210,27 @@ SSL(kind='square', square='0604', suffix='W', number=None, lot=None, is_of_lot=F
 None
 >>> print(partial.parse("0000    Unassessed"))
 None
+>>> both = dclots.Parser(dash_marker="invalid", unreadable_lot="square_only")
+>>> both.display("0368    0028-1")
+'Square 0368'
 ```
 
 ### `extra_zeros`
 
-How a square or lot written with more than four digits is read.
+How a number written with more than four digits is read.
 
 - `"invalid"` (default): the value does not parse.
-- `"trim"`: extra leading zeros are dropped from a number that has a space or
-  the start or end of the value on each side. An unspaced run of digits is
-  left as it is.
+- `"trim"`: drop the leading zeros of any run of digits in the value when
+  exactly four digits remain and no letter or digit comes before the run. This
+  covers squares, lots, and parcel and appropriation numbers. A run that can't
+  be cut to four digits that way, such as `012000001`, is left as it is.
 
 ```pycon
 >>> trim = dclots.Parser(extra_zeros="trim")
 >>> trim.normalize("00278    0032")
 '0278    0032'
+>>> trim.normalize("PAR 00087 0075")
+'PAR 00870075'
 >>> trim.is_valid("012000001")
 False
 ```
@@ -425,11 +439,13 @@ cluster, or ship the module with
 The patterns, the tests and the figures in this README are based on SSL values
 from 14 of DC's Vector Property Map layers on Open Data DC
 (<https://opendata.dc.gov/search?q=vpmdata>), downloaded on 2026-10-27. The
-download took the SSL, square, suffix, lot and lot-type columns of every
-record, without geometry, from the `Property_and_Land_WebMercator` service:
+download took each record's SSL and related attribute columns, such as
+`SQUARE`, `SUFFIX`, `LOT`, `LOT_TYPE`, `OF_LOT_SEQ`, `PAR` and `RES`, without
+geometry, from the `Property_and_Land_WebMercator` service:
 <https://maps2.dcgis.dc.gov/dcgis/rest/services/DCGIS_DATA/Property_and_Land_WebMercator/FeatureServer>.
 The downloaded records are not part of this repository. The tests use
-individual values from them and name each value's layer in a comment.
+individual values from them, with a comment naming each value's layer. Values
+made up for a test are marked as constructed.
 
 | Layer                        | Service layer | Records | Parse with default options |
 | ---------------------------- | ------------- | ------- | -------------------------- |
