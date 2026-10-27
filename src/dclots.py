@@ -37,8 +37,9 @@ option, create a :class:`Parser` and call the same functions on it::
     parser = Parser(unreadable_lot="square_only")
     parser.square("3561    ORIGINAL")
 
-Every function takes any value and returns None when the value is not
-a string the parser can read, so each one works as a dataframe UDF.
+Every function takes any value, so each one works as a dataframe UDF.
+The accessors return None for a value that doesn't parse, and
+``is_valid`` returns False.
 
 This module has no dependencies outside the standard library and can be
 copied into a project as a single file.
@@ -46,10 +47,10 @@ copied into a project as a single file.
 
 from __future__ import annotations
 
-import operator
+import numbers
 import re
 from dataclasses import dataclass
-from typing import Literal, SupportsIndex, get_args
+from typing import Literal, get_args
 
 __all__ = [
     "SSL",
@@ -147,7 +148,16 @@ _LOT_TYPE_CODES: dict[int, LotType] = {
     4: "reservation",
     5: "appropriation",
     6: "parcel",
+    7: "condo",
 }
+
+
+def _digits_to_int(digits: str) -> int | None:
+    # int() refuses digit strings longer than its limit of 4,300 digits.
+    try:
+        return int(digits)
+    except ValueError:
+        return None
 
 
 def _check_choice(name: str, value: object, choices: tuple[str, ...]) -> None:
@@ -257,10 +267,15 @@ class Parser:
     text that is not a lot. ``"invalid"`` rejects the value.
     ``"square_only"`` returns the square and suffix with no lot.
 
-    ``extra_zeros`` sets how a square or lot written with more than four
-    digits is read. ``"invalid"`` rejects the value. ``"trim"`` drops
-    the extra leading zeros when the number stands on its own, so
-    ``00278    0032`` reads as square 0278.
+    ``extra_zeros`` sets how a number written with more than four digits
+    is read. ``"invalid"`` rejects the value. ``"trim"`` drops the
+    leading zeros of a run of digits when exactly four digits remain and
+    no letter or digit comes before the run, so ``00278    0032`` reads
+    as square 0278 and ``PAR 00087 0075`` as parcel 0087.
+
+    With ``unreadable_lot="square_only"``, a value that another option
+    rejects for its lot, such as ``0368    0028-1`` under
+    ``dash_marker="invalid"``, reads as a square with no lot.
     """
 
     dash_marker: DashMarker = "of_lot"
@@ -282,7 +297,13 @@ class Parser:
         """
         if not isinstance(value, str):
             return None
-        text = value.strip().upper()
+        text = value.strip()
+        # upper() turns some non-ASCII letters into ASCII ones (ß into
+        # SS), so non-ASCII characters other than whitespace are rejected
+        # before it runs.
+        if not "".join(text.split()).isascii():
+            return None
+        text = text.upper()
         if self.extra_zeros == "trim":
             text = _EXTRA_ZEROS.sub("", text)
         return (
@@ -337,7 +358,10 @@ class Parser:
             digits = marker[1:]
         else:
             return None
-        return True, int(digits) if digits else None
+        if not digits:
+            return True, None
+        number = _digits_to_int(digits)
+        return None if number is None else (True, number)
 
     def is_valid(self, value: object) -> bool:
         """True if the value parses."""
@@ -408,29 +432,28 @@ class Parser:
 def lot_type_name(code: object) -> LotType | None:
     """Name a LOT_TYPE code from DC's lot layers: 1 is ``record``.
 
-    Accepts an integer, an integral float, or a string of digits. The
-    names match the values :func:`lot_type` returns.
+    The codes are the LOT_TYPE domain of DC's lot layers, 1 through 7.
+    Accepts an integer, an integral float or a string of digits,
+    including numpy number types. The names match the values
+    :func:`lot_type` returns.
     """
     if isinstance(code, bool):
         return None
-    if isinstance(code, float):
-        if not code.is_integer():
-            return None
-        index = int(code)
-    elif isinstance(code, str):
+    if isinstance(code, str):
         text = code.strip()
         if not (text.isascii() and text.isdigit()):
             return None
-        index = int(text)
-    elif isinstance(code, SupportsIndex):
-        # Integer types from numpy and pandas arrive here.
-        try:
-            index = operator.index(code)
-        except TypeError:
+        index = _digits_to_int(text)
+    elif isinstance(code, numbers.Integral):
+        index = int(code)
+    elif isinstance(code, numbers.Real):
+        value = float(code)
+        if not value.is_integer():
             return None
+        index = int(value)
     else:
         return None
-    return _LOT_TYPE_CODES.get(index)
+    return None if index is None else _LOT_TYPE_CODES.get(index)
 
 
 _DEFAULT = Parser()
