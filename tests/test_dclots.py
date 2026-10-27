@@ -485,6 +485,12 @@ class TestExtraZerosOption:
         assert self.parser.normalize("00278E   0032") == "0278E   0032"
         assert self.parser.normalize("PAR 00087 0075") == "PAR 00870075"
 
+    def test_trim_leaves_values_that_already_parse_alone(self) -> None:
+        # Constructed: parcel 0000, which trimming alone would cut short.
+        for value in ["PAR 00000075", "PAR 00000000"]:
+            assert self.parser.parse(value) == dclots.parse(value)
+            assert self.parser.parse(value) is not None
+
     def test_trim_does_not_split_unspaced_digits(self) -> None:
         # Constructed.
         assert self.parser.normalize("01200001") == "0120    0001"

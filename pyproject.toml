@@ -23,6 +23,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.140",
     "mypy>=1.18",
     "pytest>=9.0",
     "ruff>=0.15",
@@ -54,7 +55,7 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 # tmp/ holds scratch and downloaded data; collecting it turns a
 # throwaway file into a suite failure.
-norecursedirs = ["tmp", ".venv"]
+norecursedirs = ["tmp", ".venv", ".hypothesis"]
 filterwarnings = [
     # PySpark warns on import when pandas 3 is installed; the README's
     # PySpark example does not use pandas.
