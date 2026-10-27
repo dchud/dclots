@@ -7,6 +7,8 @@ supports Python 3.11 through 3.15. Every function takes a single value and
 returns a single value, so each one works as a scalar UDF in pandas, polars,
 DuckDB, ibis or PySpark.
 
+This repository was developed with agentic coding tools.
+
 ## Install
 
 ```sh
@@ -25,14 +27,14 @@ suffix go. DC describes the format under "Common Questions" at
 <https://opendata.dc.gov/pages/changes-in-lots>; the `APPR` prefix appears in
 DC's Appropriations layer.
 
-| SSL | Kind | Fields |
-|---|---|---|
-| `0120    0001` | square | square `0120`, lot `0001` |
-| `0120E   0001` | square | square `0120`, suffix `E`, lot `0001` |
-| `0667ESS 0802` | square | square `0667`, suffix `ESS`, lot `0802` |
-| `PAR 00870075` | parcel | number `0087`, lot `0075` |
-| `RES 015P0000` | reservation | number `015P`, lot `0000` |
-| `APPR00070000` | appropriation | number `0007`, lot `0000` |
+| SSL            | Kind          | Fields                                  |
+| -------------- | ------------- | --------------------------------------- |
+| `0120    0001` | square        | square `0120`, lot `0001`               |
+| `0120E   0001` | square        | square `0120`, suffix `E`, lot `0001`   |
+| `0667ESS 0802` | square        | square `0667`, suffix `ESS`, lot `0802` |
+| `PAR 00870075` | parcel        | number `0087`, lot `0075`               |
+| `RES 015P0000` | reservation   | number `015P`, lot `0000`               |
+| `APPR00070000` | appropriation | number `0007`, lot `0000`               |
 
 Some lots in DC's historical layers carry an of-lot marker after the lot, as
 in `1220    0076-of2`. "Of-lot" is the DC Surveyor's term for the remaining
@@ -56,22 +58,22 @@ False
 None
 ```
 
-| Function | Returns | Example |
-|---|---|---|
-| `parse(value)` | an `SSL` record | |
-| `is_valid(value)` | `True` if the value parses | `"PT OF SQUARE"` → `False` |
-| `kind(value)` | `square`, `parcel`, `reservation` or `appropriation` | `"PAR 00870075"` → `"parcel"` |
-| `square(value)` | the square; `None` for a prefixed SSL | `"0120E   0001"` → `"0120"` |
-| `suffix(value)` | the square suffix | `"0120E   0001"` → `"E"` |
-| `number(value)` | the parcel, reservation or appropriation number | `"PAR 00870075"` → `"0087"` |
-| `lot(value)` | the lot, without an of-lot marker | `"1220    0076-of2"` → `"0076"` |
-| `is_of_lot(value)` | `True` if the lot has an of-lot marker | `"1220    0076-of2"` → `True` |
-| `of_lot_number(value)` | the number in the marker | `"1220    0076-of2"` → `2` |
-| `has_suffix(value)` | `True` for a square with a suffix | `"0120E   0001"` → `True` |
-| `lot_type(value)` | the lot type implied by the SSL | `"0120E   0001"` → `"record"` |
-| `display(value)` | a readable label | `"0120E   0001"` → `"Square 0120E Lot 0001"` |
-| `normalize(value, of_lot="drop")` | the canonical twelve-character SSL | `"0120e 0001"` → `"0120E   0001"` |
-| `lot_type_name(code)` | the name for a DC `LOT_TYPE` code | `1` → `"record"` |
+| Function                          | Returns                                              | Example                                      |
+| --------------------------------- | ---------------------------------------------------- | -------------------------------------------- |
+| `parse(value)`                    | an `SSL` record                                      |                                              |
+| `is_valid(value)`                 | `True` if the value parses                           | `"PT OF SQUARE"` → `False`                   |
+| `kind(value)`                     | `square`, `parcel`, `reservation` or `appropriation` | `"PAR 00870075"` → `"parcel"`                |
+| `square(value)`                   | the square; `None` for a prefixed SSL                | `"0120E   0001"` → `"0120"`                  |
+| `suffix(value)`                   | the square suffix                                    | `"0120E   0001"` → `"E"`                     |
+| `number(value)`                   | the parcel, reservation or appropriation number      | `"PAR 00870075"` → `"0087"`                  |
+| `lot(value)`                      | the lot, without an of-lot marker                    | `"1220    0076-of2"` → `"0076"`              |
+| `is_of_lot(value)`                | `True` if the lot has an of-lot marker               | `"1220    0076-of2"` → `True`                |
+| `of_lot_number(value)`            | the number in the marker                             | `"1220    0076-of2"` → `2`                   |
+| `has_suffix(value)`               | `True` for a square with a suffix                    | `"0120E   0001"` → `True`                    |
+| `lot_type(value)`                 | the lot type implied by the SSL                      | `"0120E   0001"` → `"record"`                |
+| `display(value)`                  | a readable label                                     | `"0120E   0001"` → `"Square 0120E Lot 0001"` |
+| `normalize(value, of_lot="drop")` | the canonical twelve-character SSL                   | `"0120e 0001"` → `"0120E   0001"`            |
+| `lot_type_name(code)`             | the name for a DC `LOT_TYPE` code                    | `1` → `"record"`                             |
 
 Every function accepts any value. All of them except `is_valid` and
 `lot_type_name` return `None` for a value that doesn't parse, including `None`,
@@ -82,17 +84,17 @@ Every function accepts any value. All of them except `is_valid` and
 `lot_type()` infers the type from the prefix, or from the lot number using
 DC's numbering ranges:
 
-| SSL | `lot_type()` |
-|---|---|
-| lot `0001`–`0799` | `record` |
-| lot `0800`–`1999` | `tax` |
-| lot `2000`–`6999` | `condo` |
-| lot `7000`–`9999` | `air_rights` |
-| letter lot, such as `000A` or `00B2` | `record` |
-| lot `0000` | `None` |
-| `PAR` | `parcel` |
-| `RES` | `reservation` |
-| `APPR` | `appropriation` |
+| SSL                                  | `lot_type()`    |
+| ------------------------------------ | --------------- |
+| lot `0001`–`0799`                    | `record`        |
+| lot `0800`–`1999`                    | `tax`           |
+| lot `2000`–`6999`                    | `condo`         |
+| lot `7000`–`9999`                    | `air_rights`    |
+| letter lot, such as `000A` or `00B2` | `record`        |
+| lot `0000`                           | `None`          |
+| `PAR`                                | `parcel`        |
+| `RES`                                | `reservation`   |
+| `APPR`                               | `appropriation` |
 
 The ranges have exceptions. In the Common Ownership Lots layer as downloaded
 on 2026-10-27, the inferred type differs from DC's `LOT_TYPE` column for 596
@@ -108,13 +110,13 @@ codes to the same names `lot_type()` returns.
 ```
 
 | `LOT_TYPE` | `lot_type_name()` |
-|---|---|
-| 1 | `record` |
-| 2 | `tax` |
-| 3 | `air_rights` |
-| 4 | `reservation` |
-| 5 | `appropriation` |
-| 6 | `parcel` |
+| ---------- | ----------------- |
+| 1          | `record`          |
+| 2          | `tax`             |
+| 3          | `air_rights`      |
+| 4          | `reservation`     |
+| 5          | `appropriation`   |
+| 6          | `parcel`          |
 
 `LOT_TYPE` has no code for condo lots. `lot_type_name()` accepts an integer,
 an integral float such as `6.0`, or a string of digits.
@@ -429,23 +431,23 @@ record, without geometry, from the `Property_and_Land_WebMercator` service:
 The downloaded records are not part of this repository. The tests use
 individual values from them and name each value's layer in a comment.
 
-| Layer | Service layer | Records | Parse with default options |
-|---|---|---|---|
-| Air Rights Lots | 3 | 1,020 | 1,009 |
-| Air Rights Lots (Historical) | 2 | 418 | 416 |
-| Appropriations | 5 | 17 | 17 |
-| Common Ownership Lots | 40 | 137,400 | 137,388 |
-| Condo Approval Lots | 44 | 4,865 | 4,863 |
-| Condo Relate Table | 52 | 73,545 | 73,545 |
-| Land Boundary Change | 78 | 23,886 | 23,836 |
-| Parcel Lots | 33 | 1,124 | 1,124 |
-| Parcel Lots (Historical) | 32 | 272 | 272 |
-| Record Lots (Historical) | 34 | 14,915 | 14,875 |
-| Reservations | 37 | 939 | 938 |
-| Reservations (Historical) | 36 | 91 | 91 |
-| Tax Lots | 39 | 30,867 | 30,867 |
-| Tax Lots (Historical) | 38 | 8,066 | 8,065 |
-| Total | | 297,425 | 297,306 |
+| Layer                        | Service layer | Records | Parse with default options |
+| ---------------------------- | ------------- | ------- | -------------------------- |
+| Air Rights Lots              | 3             | 1,020   | 1,009                      |
+| Air Rights Lots (Historical) | 2             | 418     | 416                        |
+| Appropriations               | 5             | 17      | 17                         |
+| Common Ownership Lots        | 40            | 137,400 | 137,388                    |
+| Condo Approval Lots          | 44            | 4,865   | 4,863                      |
+| Condo Relate Table           | 52            | 73,545  | 73,545                     |
+| Land Boundary Change         | 78            | 23,886  | 23,836                     |
+| Parcel Lots                  | 33            | 1,124   | 1,124                      |
+| Parcel Lots (Historical)     | 32            | 272     | 272                        |
+| Record Lots (Historical)     | 34            | 14,915  | 14,875                     |
+| Reservations                 | 37            | 939     | 938                        |
+| Reservations (Historical)    | 36            | 91      | 91                         |
+| Tax Lots                     | 39            | 30,867  | 30,867                     |
+| Tax Lots (Historical)        | 38            | 8,066   | 8,065                      |
+| Total                        |               | 297,425 | 297,306                    |
 
 Of the 119 records that don't parse, 14 have no SSL. The others have text in
 place of a lot, such as `ORIGINAL` or `PT OF SQUARE`, a decimal lot, a
