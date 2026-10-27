@@ -1,0 +1,28 @@
+version: 2
+
+# One group across both ecosystems, so each scheduled run opens a single
+# pull request. Security updates are not grouped here and arrive on their
+# own when Dependabot security updates are enabled for the repository.
+multi-ecosystem-groups:
+  dependencies:
+    schedule:
+      interval: monthly
+
+updates:
+  # The actions in .github/workflows/, pinned by commit SHA.
+  - package-ecosystem: github-actions
+    directory: /
+    patterns: ["*"]
+    multi-ecosystem-group: dependencies
+    # Wait a week after a release before proposing it.
+    cooldown:
+      default-days: 7
+
+  # The dev dependency group and uv.lock. The library itself has no
+  # runtime dependencies.
+  - package-ecosystem: uv
+    directory: /
+    patterns: ["*"]
+    multi-ecosystem-group: dependencies
+    cooldown:
+      default-days: 7

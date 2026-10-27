@@ -42,7 +42,6 @@ EXCLUDED_PATHS = {
     # quote the shapes they forbid.
     Path("CLAUDE.md"),
     Path("AGENTS.md"),
-    Path("agent-approach-brief.md"),
 }
 SUFFIXES = {".py", ".md", ".yml", ".yaml", ".toml", ".sh"}
 
