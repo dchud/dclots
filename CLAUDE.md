@@ -28,7 +28,7 @@ examples.
 | `README.md` | User documentation |
 | `scripts/check.sh` | Pre-push check; runs what CI runs |
 | `scripts/lint_process_labels.py` | Fails on ticket IDs, PR numbers and version-tagged claims |
-| `.github/workflows/ci.yml` | Lint job, and tests on Python 3.11–3.15 |
+| `.github/workflows/ci.yml` | `lint`; `test` on Python 3.11–3.15; `test-results`, one result for the test matrix |
 | `.beads/` | Issue tracker (`br`) |
 
 ## Commands
@@ -115,8 +115,11 @@ and merges them. Treat a correction as a standing rule.
 
 - Never merge. Approving an approach is not approval to merge. Don't ask
   whether to merge or say you're waiting on one.
-- `main` has no branch protection, because GitHub doesn't offer it for
-  private repositories on the free plan. Land everything through a PR anyway.
+- A ruleset protects `main`: changes land only through a PR, the `lint`
+  and `test-results` checks must pass, and force pushes and deleting the
+  branch are blocked. Nobody bypasses it. Renaming either job means
+  updating the ruleset in the repository settings; changing the Python
+  versions in the matrix does not.
 - Cut every branch from `main` and target `main`; don't stack PRs.
 - Never delete remote branches. Never run a package registry upload.
 - After a merge: switch to `main`, pull, `git remote prune origin`, then

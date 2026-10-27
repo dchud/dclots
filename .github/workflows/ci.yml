@@ -70,3 +70,19 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+
+  # One result for the whole test matrix, which the branch ruleset on main
+  # requires, so the ruleset doesn't list each Python version. It runs
+  # even when a matrix job fails, because a skipped required check counts
+  # as passing.
+  test-results:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check that every test job passed
+        env:
+          RESULT: ${{ needs.test.result }}
+        run: |
+          echo "Test matrix result: $RESULT"
+          test "$RESULT" = "success"
