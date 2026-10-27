@@ -1,0 +1,21 @@
+# Scratch: throwaway scripts, downloaded data, PR bodies.
+tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Written by local Spark sessions in the README tests.
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Browser automation snapshots
+.playwright-mcp/
