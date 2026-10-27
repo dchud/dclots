@@ -7,6 +7,7 @@ publishes alongside them. The comment above each group names the layer.
 """
 
 import math
+from pathlib import Path
 
 import pytest
 
@@ -440,3 +441,19 @@ def test_unknown_option_value_raises(options: dict[str, str]) -> None:
 def test_unknown_normalize_of_lot_value_raises() -> None:
     with pytest.raises(ValueError, match="must be one of"):
         dclots.normalize("0120    0001", of_lot="strip")  # type: ignore[arg-type]
+
+
+def test_module_header_carries_license_and_link() -> None:
+    # A copy of the single module file has to carry the license with it.
+    source = Path(dclots.__file__).read_text(encoding="utf-8")
+    header = source.split('"""', 1)[0]
+    header_words = " ".join(
+        " ".join(line.removeprefix("#").split())
+        for line in header.splitlines()
+    ).split()
+    license_path = Path(__file__).resolve().parent.parent / "LICENSE"
+    license_words = license_path.read_text(encoding="utf-8").split()
+    assert license_words[:2] == ["MIT", "License"]
+    assert " ".join(license_words[2:]) in " ".join(header_words)
+    assert "SPDX-License-Identifier: MIT" in header
+    assert "https://github.com/dchud/dclots" in header

@@ -13,7 +13,8 @@ DuckDB, ibis or PySpark.
 uv add git+https://github.com/dchud/dclots
 ```
 
-Or copy `src/dclots.py` into your project.
+Or copy `src/dclots.py` into your project. Its header carries the MIT license
+and a link back to this repository.
 
 ## SSL values
 
@@ -416,6 +417,39 @@ df.withColumn("lot_type", ssl_lot_type("ssl")).show()
 On a cluster the executors import `dclots` too. Install the package on the
 cluster, or ship the module with
 `spark.sparkContext.addPyFile("path/to/dclots.py")`.
+
+## Sample data
+
+The patterns, the tests and the figures in this README are based on SSL values
+from 14 of DC's Vector Property Map layers on Open Data DC
+(<https://opendata.dc.gov/search?q=vpmdata>), downloaded on 2026-10-27. The
+download took the SSL, square, suffix, lot and lot-type columns of every
+record, without geometry, from the `Property_and_Land_WebMercator` service:
+<https://maps2.dcgis.dc.gov/dcgis/rest/services/DCGIS_DATA/Property_and_Land_WebMercator/FeatureServer>.
+The downloaded records are not part of this repository. The tests use
+individual values from them and name each value's layer in a comment.
+
+| Layer | Service layer | Records | Parse with default options |
+|---|---|---|---|
+| Air Rights Lots | 3 | 1,020 | 1,009 |
+| Air Rights Lots (Historical) | 2 | 418 | 416 |
+| Appropriations | 5 | 17 | 17 |
+| Common Ownership Lots | 40 | 137,400 | 137,388 |
+| Condo Approval Lots | 44 | 4,865 | 4,863 |
+| Condo Relate Table | 52 | 73,545 | 73,545 |
+| Land Boundary Change | 78 | 23,886 | 23,836 |
+| Parcel Lots | 33 | 1,124 | 1,124 |
+| Parcel Lots (Historical) | 32 | 272 | 272 |
+| Record Lots (Historical) | 34 | 14,915 | 14,875 |
+| Reservations | 37 | 939 | 938 |
+| Reservations (Historical) | 36 | 91 | 91 |
+| Tax Lots | 39 | 30,867 | 30,867 |
+| Tax Lots (Historical) | 38 | 8,066 | 8,065 |
+| Total | | 297,425 | 297,306 |
+
+Of the 119 records that don't parse, 14 have no SSL. The others have text in
+place of a lot, such as `ORIGINAL` or `PT OF SQUARE`, a decimal lot, a
+five-digit square, a marker such as `-B`, or the reservation number `06.5`.
 
 ## Development
 
